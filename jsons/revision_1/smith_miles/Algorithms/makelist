@@ -1,0 +1,20 @@
+#!/bin/bash
+
+LINEC=0
+FILEC=0
+BASE="./listfiles/instlist"
+FNAME="$BASE$FILEC"
+
+yourfilenames=`ls ./instances/*`
+for eachfile in $yourfilenames
+do
+   let "LINEC += 1"
+   echo "${eachfile##*/}" >> $FNAME
+   if [[ "$LINEC" -gt 0 ]]; then
+       LINEC=0
+       let "FILEC += 1"
+       FNAME="$BASE$FILEC"
+   fi
+   echo $LINEC
+   echo $FILEC
+done
