@@ -7,7 +7,7 @@ import re
 import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import argparse
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -37,7 +37,6 @@ def parse_files(path, pattern, target, columns, verbose=True):
 
 
 def compare_samples(sample_1, sample_2, alpha=0.05):
-
     final_p_value = 0
     _, p_value_levene = stats.levene(sample_1, sample_2)
     if p_value_levene >= alpha:
@@ -132,43 +131,46 @@ def plot_differences(df, figure_name):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Error expected: <main_dataset> <differences_dataset>")
+    parser = argparse.ArgumentParser(description="Statistical Analysis")
+    parser.add_argument("path", type=str, help="Path where the .allHV files are stored")
+    parser.add_argument("ver_df", type=str, help="Name of the verification dataset")
+    parser.add_argument("diff_df", type=str, help="Name of the differences dataset")
 
-    else:
-        df = pd.read_csv(sys.argv[1], index_col=0)
-        diff_df = pd.read_csv(sys.argv[2], index_col=0)
+    args = parser.parse_args()
+    path = args.path
 
-        valids = []
-        keys = df.columns.to_list()
-        target = keys[0]
-        keys_stats = keys[1:]
+    df = pd.read_csv(join(path, args.ver_df), index_col=0)
+    diff_df = pd.read_csv(join(path, args.diff_df), index_col=0)
 
-        comp_df = pd.DataFrame(columns=keys)
-        table = []
-        text_table = []
-        path = "/Users/amarrero/Proyectos/MEA_KP_Heuristics/script/"  # TODO: Update with path to allHVs files
-        n_instances = df.index.to_list()
-        for i in n_instances:
-            # TODO: Update pattern to match the files
-            pattern = rf"instance_{i}_target_GA_1.0_solved_by_GA_\d\.\d\.allHV"
-            i_configs = parse_files(path, pattern, target, keys, True)
-            if not i_configs.empty:
-                valids.append(i)
-                rs, row, avg_row = stats_procedure(
-                    i_configs, target, keys_stats, alpha=0.05
-                )
-                comp_df = comp_df.append(rs, ignore_index=True)
-                table.append(row)
+    valids = []
+    keys = df.columns.to_list()
+    target = keys[0]
+    keys_stats = keys[1:]
 
-        results = np.array(table).sum(axis=0)
-        print(results)
-        i = 0
-        for case in diff_df.columns:
-            print(
-                f'- {case.replace("-", " vs ")}: Wins {results[i]} No-diff: {results[i + 1]}'
+    comp_df = pd.DataFrame(columns=keys)
+    table = []
+    text_table = []
+    n_instances = df.index.to_list()
+    for i in n_instances:
+        # TODO: Update pattern to match the files
+        pattern = rf"instance_{i}_target_GA_1.0_solved_by_GA_\d\.\d\.allHV"
+        i_configs = parse_files(path, pattern, target, keys, True)
+        if not i_configs.empty:
+            valids.append(i)
+            rs, row, avg_row = stats_procedure(
+                i_configs, target, keys_stats, alpha=0.05
             )
-            i += 2
+            comp_df = pd.concat([comp_df, rs], ignore_index=True)
+            table.append(row)
 
-        figure_name = f"differences_target_{target}_others.png"
-        plot_differences(diff_df, figure_name)
+    results = np.array(table).sum(axis=0)
+    print(results)
+    i = 0
+    for case in diff_df.columns:
+        print(
+            f'- {case.replace("-", " vs ")}: Wins {results[i]} No-diff: {results[i + 1]}'
+        )
+        i += 2
+
+    figure_name = f"differences_target_{target}_others.png"
+    plot_differences(diff_df, figure_name)
