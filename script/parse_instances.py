@@ -90,7 +90,8 @@ def parse_instance(file=None):
         avg_eff += profit / weight
 
     instance = {
-        "target": "Random",  # instance_data[1].split()[0],  # params[0],
+        "target": "Jooken",  # instance_data[1].split()[0],  # params[0],
+        "N": len(weights),
         "capacity": capacity,
         "avg_eff": avg_eff,
         "max_p": max_p,
@@ -121,6 +122,20 @@ def generate_dataset(path, filename="knapsack_dataset.csv"):
             instances.append(parse_instance(file))
 
         dataset = pd.DataFrame(instances)
+        # To remove later on
+        features = [
+            "target",
+            "N",
+            "capacity",
+            "avg_eff",
+            "max_p",
+            "max_w",
+            "mean",
+            "min_p",
+            "min_w",
+            "std",
+        ]
+        dataset = dataset[features]
         print(f"Dataset generated.")
         print("=" * 80)
         print(dataset.head())
@@ -134,5 +149,5 @@ if __name__ == "__main__":
     parser.add_argument("path", help="Root dir of the instances")
     parser.add_argument("-f", "--file", help="Output file")
     args = parser.parse_args()
-    filename = "knapsack_dataset.csv" if args.file is None else args.file
+    filename = "jooken_knapsack_dataset.csv" if args.file is None else args.file
     dataset = generate_dataset(args.path, filename)
